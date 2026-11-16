@@ -1,0 +1,5 @@
+bin/
+obj/
+ejecutable/
+.vs/
+*.user

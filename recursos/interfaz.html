@@ -1,0 +1,938 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>CoreBlaze</title>
+<style>
+:root{
+  --bg:#070b14;--bg-2:#0a1020;--side:#080d19;
+  --card:rgba(15,22,40,.72);--card-2:rgba(20,29,52,.85);--card-hover:rgba(22,32,58,.9);
+  --line:rgba(148,163,184,.10);--line-2:rgba(148,163,184,.18);--line-3:rgba(148,163,184,.28);
+  --text:#eef2f8;--text-2:#9aa6bb;--text-3:#5f6b84;
+  --cpu:#3b8cff;--cpu-2:#22d3ee;--gpu:#34d399;--gpu-2:#a3e635;
+  --amber:#fbbf24;--orange:#fb7a3c;--red:#f43f5e;--violet:#a78bfa;--ok:#34d399;
+  --brand:linear-gradient(135deg,#2470ff 0%,#8c48f0 52%,#ff5832 100%);
+  --brand-h:linear-gradient(90deg,#2470ff 0%,#8c48f0 50%,#ff5832 100%);
+  --r:16px;--r-sm:10px;
+  --sans:'Segoe UI Variable Text','Segoe UI',system-ui,sans-serif;
+  --disp:'Segoe UI Variable Display','Segoe UI',system-ui,sans-serif;
+  --mono:'Cascadia Mono','Cascadia Code',Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font:14px/1.45 var(--sans);user-select:none;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+   radial-gradient(900px 520px at 100% -10%,rgba(255,88,50,.13),transparent 60%),
+   radial-gradient(800px 600px at 10% 110%,rgba(36,112,255,.13),transparent 60%),
+   radial-gradient(600px 400px at 55% 40%,rgba(140,72,240,.06),transparent 70%)}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+  background-image:linear-gradient(rgba(148,163,184,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.035) 1px,transparent 1px);
+  background-size:44px 44px;mask-image:radial-gradient(ellipse at 60% 30%,#000 20%,transparent 75%)}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input{font:inherit;color:inherit}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:rgba(148,163,184,.18);border-radius:10px;border:3px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background-color:rgba(148,163,184,.3)}
+::-webkit-scrollbar-track{background:transparent}
+
+.app{position:relative;z-index:1;display:grid;grid-template-columns:236px 1fr;height:100%}
+
+/* barra lateral */
+.side{background:linear-gradient(180deg,rgba(8,13,25,.96),rgba(7,11,20,.96));border-right:1px solid var(--line);display:flex;flex-direction:column;padding:18px 14px 14px;gap:6px;min-height:0}
+.brand{display:flex;align-items:center;gap:12px;padding:4px 6px 18px}
+.brand svg{width:40px;height:40px;filter:drop-shadow(0 6px 16px rgba(140,72,240,.45))}
+.brand b{display:block;font:700 18px/1.1 var(--disp);letter-spacing:.2px}
+.brand small{display:block;color:var(--text-3);font-size:11.5px;letter-spacing:.4px;text-transform:uppercase;margin-top:3px}
+.nav-t{color:var(--text-3);font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;padding:10px 10px 6px}
+.nav{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:11px;color:var(--text-2);font-weight:550;position:relative;transition:.18s;width:100%;text-align:left}
+.nav:hover{background:rgba(148,163,184,.06);color:var(--text)}
+.nav.on{background:linear-gradient(90deg,rgba(59,140,255,.16),rgba(140,72,240,.08));color:var(--text);box-shadow:inset 0 0 0 1px rgba(99,140,255,.22)}
+.nav.on::before{content:"";position:absolute;left:-14px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--brand)}
+.nav.on svg{color:#8fb4ff}
+.nav .badge{margin-left:auto;font:600 11px var(--mono);background:rgba(148,163,184,.12);color:var(--text-2);padding:1px 7px;border-radius:20px}
+.nav .live{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 0 0 rgba(244,63,94,.6);animation:pulso 1.6s infinite;display:none}
+.running .nav .live{display:block}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:10px}
+.mini{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:12px 13px}
+.mini-h{display:flex;justify-content:space-between;color:var(--text-3);font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.mini-r{display:grid;grid-template-columns:34px 1fr 46px;align-items:center;gap:8px;margin:7px 0 2px;font-size:12.5px;color:var(--text-2)}
+.mini-r b{font:600 12.5px var(--mono);color:var(--text);text-align:right}
+.bar{height:5px;border-radius:5px;background:rgba(148,163,184,.12);overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:5px;transition:width .8s cubic-bezier(.2,.8,.2,1),background .5s}
+.ver{color:var(--text-3);font-size:11px;text-align:center}
+
+/* contenido */
+.main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.top{display:flex;align-items:center;gap:16px;padding:18px 28px 14px;border-bottom:1px solid var(--line);background:rgba(7,11,20,.55);backdrop-filter:blur(12px)}
+.top h1{font:700 22px/1.15 var(--disp);letter-spacing:.1px}
+.top p{color:var(--text-2);font-size:13px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .tt{min-width:0;flex:1}
+.pill{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:30px;border:1px solid var(--line-2);background:var(--card);font-weight:600;font-size:12.5px;white-space:nowrap}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok)}
+.running .pill.st{border-color:rgba(244,63,94,.45);background:rgba(244,63,94,.10);color:#ffb3c1}
+.running .pill.st .dot{background:var(--red);box-shadow:0 0 0 0 rgba(244,63,94,.6);animation:pulso 1.4s infinite}
+.pill.tm{font:600 15px var(--mono);letter-spacing:.5px}
+.pill.tm small{font:500 11px var(--sans);color:var(--text-3);margin-left:2px}
+.icon-btn{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;border:1px solid var(--line-2);background:var(--card);color:var(--text-2);transition:.18s}
+.icon-btn:hover{color:var(--text);border-color:var(--line-3)}
+.icon-btn.on{color:#c4b5fd;border-color:rgba(167,139,250,.5);background:rgba(167,139,250,.12)}
+.go{position:relative;display:inline-flex;align-items:center;gap:10px;height:42px;padding:0 22px;border-radius:12px;font-weight:700;font-size:14px;color:#fff;background:var(--brand);box-shadow:0 8px 26px -6px rgba(140,72,240,.6),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .15s,box-shadow .2s,filter .2s;overflow:hidden;white-space:nowrap}
+.go:hover{transform:translateY(-1px);filter:brightness(1.08);box-shadow:0 12px 30px -6px rgba(140,72,240,.75),inset 0 1px 0 rgba(255,255,255,.25)}
+.go:active{transform:none}
+.go::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.25) 50%,transparent 70%);transform:translateX(-120%);transition:transform .7s}
+.go:hover::after{transform:translateX(120%)}
+.go svg{fill:currentColor;stroke:none}
+.running .go{background:linear-gradient(135deg,#f43f5e,#e11d48);box-shadow:0 8px 26px -6px rgba(244,63,94,.6),inset 0 1px 0 rgba(255,255,255,.2)}
+.go.big{height:52px;width:100%;justify-content:center;font-size:15.5px;border-radius:14px}
+
+.paginas{flex:1;min-height:0;overflow:auto;padding:22px 28px 28px}
+.pag{display:none;animation:entra .35s ease}
+.pag.on{display:block}
+@keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes pulso{0%{box-shadow:0 0 0 0 rgba(244,63,94,.55)}70%{box-shadow:0 0 0 9px rgba(244,63,94,0)}100%{box-shadow:0 0 0 0 rgba(244,63,94,0)}}
+
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+@media (max-width:1250px){.c3{grid-column:span 6}.c4,.c8{grid-column:span 12}}
+@media (max-width:1100px){.c6{grid-column:span 12}}
+.card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;backdrop-filter:blur(14px);transition:border-color .25s,background .25s}
+.card:hover{border-color:var(--line-2)}
+.card-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.card-h h3{font:650 14.5px var(--disp);letter-spacing:.1px}
+.card-h .sub{color:var(--text-3);font-size:12px}
+.card-h .r{margin-left:auto;display:flex;gap:8px;align-items:center}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--text-2);background:rgba(148,163,184,.08);border:1px solid var(--line);padding:3px 9px;border-radius:20px;white-space:nowrap}
+.tag b{font-family:var(--mono);color:var(--text)}
+.kdot{width:8px;height:8px;border-radius:50%;flex:none}
+
+/* medidores */
+.gauge-card{display:flex;flex-direction:column;align-items:center;padding:16px 16px 18px;overflow:hidden}
+.gauge-card .card-h{width:100%;margin-bottom:4px}
+.gauge-card::after{content:"";position:absolute;inset:auto -30% -60% -30%;height:70%;background:radial-gradient(closest-side,var(--halo,rgba(59,140,255,.14)),transparent);pointer-events:none;transition:background .6s}
+.gw{position:relative;width:176px;height:176px;margin:2px 0 -10px}
+.gw svg{width:100%;height:100%;overflow:visible}
+.g-track{fill:none;stroke:rgba(148,163,184,.10);stroke-width:9;stroke-linecap:round}
+.g-val{fill:none;stroke-width:9;stroke-linecap:round;transition:stroke-dasharray 1s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 0 7px var(--glow,rgba(59,140,255,.6)))}
+.g-tick{stroke:rgba(148,163,184,.22);stroke-width:1.4}
+.gc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:6px}
+.gc .v{font:700 40px/1 var(--disp);letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.gc .u{font-size:13px;color:var(--text-2);font-weight:600;margin-top:4px}
+.gauge-card .foot{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;position:relative;z-index:1}
+
+/* estado termico */
+.estado{display:flex;flex-direction:column;overflow:hidden}
+.estado .big{display:flex;align-items:center;gap:14px;margin:4px 0 10px}
+.estado .ico{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;background:rgba(52,211,153,.12);color:var(--ok);border:1px solid rgba(52,211,153,.3);transition:.4s}
+.estado .ico svg{width:26px;height:26px}
+.estado .w{font:700 28px/1.05 var(--disp);transition:color .4s}
+.estado .d{color:var(--text-2);font-size:13px;margin-top:3px}
+.kv{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px dashed var(--line);font-size:13px;color:var(--text-2)}
+.kv b{color:var(--text);font-weight:600;font-family:var(--mono);font-size:12.5px}
+.estado .glow{position:absolute;right:-60px;top:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(closest-side,var(--eg,rgba(52,211,153,.18)),transparent);pointer-events:none;transition:background .6s}
+
+/* fichas de metricas */
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.tile{padding:15px 16px 14px}
+.tile .l{display:flex;align-items:center;gap:8px;color:var(--text-2);font-size:12.5px;font-weight:550}
+.tile .v{font:700 26px/1.1 var(--disp);margin:9px 0 2px;font-variant-numeric:tabular-nums;letter-spacing:-.3px;white-space:nowrap}
+.tile .v small{font:600 12.5px var(--sans);color:var(--text-2);margin-left:4px;letter-spacing:0}
+.tile .s{color:var(--text-3);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:10px}
+.tile .s.alerta{color:#ff8fa3;font-weight:600}
+.tile .ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center}
+.tile .ic svg{width:15px;height:15px}
+
+/* graficos */
+.chart{height:230px;position:relative}
+.chart canvas{width:100%;height:100%;display:block}
+.seg{display:inline-flex;background:rgba(148,163,184,.08);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{padding:4px 11px;border-radius:7px;font-size:12px;font-weight:600;color:var(--text-2)}
+.seg button.on{background:rgba(148,163,184,.16);color:var(--text)}
+.leg{display:flex;gap:14px;font-size:12px;color:var(--text-2)}
+.leg span{display:inline-flex;align-items:center;gap:6px}
+.leg i{width:12px;height:3px;border-radius:3px}
+.leg b{font-family:var(--mono);color:var(--text);font-weight:600}
+
+/* pagina de estres */
+.sec-t{font:650 13px var(--disp);color:var(--text-2);letter-spacing:.3px;margin:2px 0 12px;display:flex;align-items:center;gap:8px}
+.opts{display:grid;gap:12px}
+.opts.c2{grid-template-columns:1fr 1fr}.opts.c3x{grid-template-columns:repeat(3,1fr)}
+.opt{position:relative;display:flex;gap:14px;align-items:flex-start;text-align:left;padding:16px;border-radius:14px;border:1px solid var(--line-2);background:rgba(148,163,184,.04);transition:.2s;width:100%}
+.opt:hover{border-color:var(--line-3);background:rgba(148,163,184,.07)}
+.opt.on{border-color:rgba(124,140,255,.55);background:linear-gradient(135deg,rgba(59,140,255,.12),rgba(140,72,240,.10));box-shadow:0 0 0 3px rgba(124,140,255,.10)}
+.opt.off{opacity:.45}
+.opt .oi{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:none;background:rgba(148,163,184,.10)}
+.opt .oi svg{width:21px;height:21px}
+.opt b{display:block;font:650 14.5px var(--disp)}
+.opt p{color:var(--text-2);font-size:12.5px;margin-top:3px}
+.opt .chk{position:absolute;right:14px;top:14px;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line-3);display:grid;place-items:center;transition:.2s}
+.opt.on .chk{background:var(--brand);border-color:transparent}
+.opt .chk svg{width:12px;height:12px;stroke-width:3;color:#fff;opacity:0}
+.opt.on .chk svg{opacity:1}
+.heat{display:flex;gap:4px;margin-top:9px}
+.heat i{width:18px;height:4px;border-radius:3px;background:rgba(148,163,184,.16)}
+.heat i.f{background:linear-gradient(90deg,var(--amber),var(--orange))}
+.sw{margin-left:auto;width:42px;height:24px;border-radius:20px;background:rgba(148,163,184,.2);position:relative;flex:none;transition:.25s}
+.sw::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.25s;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.opt.on .sw{background:var(--brand)}
+.opt.on .sw::after{left:21px}
+.slider-row{display:flex;align-items:center;gap:16px}
+.slider-row .val{font:700 26px var(--disp);min-width:86px;font-variant-numeric:tabular-nums}
+.slider-row .val small{font:600 12.5px var(--sans);color:var(--text-2);margin-left:3px}
+input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:6px;border-radius:6px;background:linear-gradient(90deg,var(--c1,#3b8cff),var(--c2,#8c48f0)) 0/var(--p,50%) 100% no-repeat,rgba(148,163,184,.16);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;border:4px solid #8c48f0;box-shadow:0 0 0 4px rgba(140,72,240,.18),0 3px 10px rgba(0,0,0,.4);cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:7px 13px;border-radius:10px;border:1px solid var(--line-2);font-size:12.5px;font-weight:600;color:var(--text-2);background:rgba(148,163,184,.04);transition:.18s}
+.chip:hover{color:var(--text);border-color:var(--line-3)}
+.chip.on{color:#fff;border-color:rgba(124,140,255,.55);background:linear-gradient(135deg,rgba(59,140,255,.22),rgba(140,72,240,.2))}
+.note{display:flex;gap:10px;color:var(--text-2);font-size:12.5px;background:rgba(148,163,184,.05);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-top:14px}
+.note svg{color:var(--amber);margin-top:1px}
+.resumen-cfg .kv:first-of-type{border-top:0}
+
+/* sensores */
+.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.search{display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line-2);border-radius:12px;padding:0 13px;height:40px;width:300px;color:var(--text-3);transition:.2s}
+.search:focus-within{border-color:rgba(124,140,255,.55);box-shadow:0 0 0 3px rgba(124,140,255,.12)}
+.search input{background:none;border:0;outline:none;flex:1;color:var(--text);user-select:text}
+.tabla{width:100%;border-collapse:separate;border-spacing:0}
+.tabla th{position:sticky;top:0;background:#0d1426;z-index:1;text-align:left;font-size:11.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--text-3);font-weight:650;padding:11px 14px;border-bottom:1px solid var(--line)}
+.tabla td{padding:10px 14px;border-bottom:1px solid rgba(148,163,184,.06);font-size:13px;white-space:nowrap}
+.tabla tr:hover td{background:rgba(148,163,184,.04)}
+.tabla td.n{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.tabla th.n{text-align:right}
+.tabla .mb{width:120px}
+.dev{font:700 10.5px var(--mono);padding:3px 7px;border-radius:6px;letter-spacing:.5px}
+.dev.cpu{background:rgba(59,140,255,.14);color:#8fb4ff}
+.dev.gpu{background:rgba(52,211,153,.14);color:#7ee8bb}
+.tipo{color:var(--text-2)}
+.tabla-wrap{max-height:calc(100vh - 230px);overflow:auto;border-radius:12px}
+
+/* historial */
+.hist{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px}
+.hc{display:flex;flex-direction:column;gap:12px}
+.hc .top-r{display:flex;align-items:flex-start;gap:12px}
+.hc .fecha{font:650 15px var(--disp)}
+.hc .meta{color:var(--text-3);font-size:12px;margin-top:2px}
+.hc .vs{display:flex;gap:8px;flex-wrap:wrap}
+.vb{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:650;padding:4px 10px;border-radius:20px;border:1px solid}
+.vb.ok{color:#6ee7b7;background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3)}
+.vb.warn{color:#fcd34d;background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.3)}
+.vb.bad{color:#fda4af;background:rgba(244,63,94,.1);border-color:rgba(244,63,94,.3)}
+.vb.na{color:var(--text-2);background:rgba(148,163,184,.08);border-color:var(--line-2)}
+.nums{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.num{background:rgba(148,163,184,.05);border:1px solid var(--line);border-radius:11px;padding:9px 11px}
+.num span{display:block;color:var(--text-3);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px}
+.num b{font:700 16px var(--disp);font-variant-numeric:tabular-nums}
+.spark{height:64px}
+.spark canvas{width:100%;height:100%;display:block}
+.acts{display:flex;gap:8px;justify-content:flex-end}
+.btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--line-2);background:rgba(148,163,184,.06);font-weight:600;font-size:13px;color:var(--text);transition:.18s}
+.btn:hover{border-color:var(--line-3);background:rgba(148,163,184,.1)}
+.btn.pri{border-color:transparent;background:var(--brand);box-shadow:0 6px 18px -6px rgba(140,72,240,.6)}
+.btn.dan:hover{border-color:rgba(244,63,94,.5);color:#fda4af}
+.vacio{text-align:center;padding:70px 20px;color:var(--text-2)}
+.vacio .vi{width:76px;height:76px;margin:0 auto 18px;border-radius:22px;display:grid;place-items:center;background:rgba(148,163,184,.06);border:1px solid var(--line-2);color:var(--text-3)}
+.vacio .vi svg{width:34px;height:34px}
+.vacio h3{font:650 18px var(--disp);color:var(--text);margin-bottom:6px}
+
+/* modal */
+.modal{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(3,6,12,.62);backdrop-filter:blur(8px);padding:30px}
+.modal.on{display:flex;animation:fade .25s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.mbox{width:min(860px,100%);max-height:100%;overflow:auto;background:linear-gradient(180deg,#0f172b,#0b1222);border:1px solid var(--line-2);border-radius:20px;box-shadow:0 30px 80px -20px rgba(0,0,0,.7);animation:sube .35s cubic-bezier(.2,.8,.2,1)}
+@keyframes sube{from{transform:translateY(16px) scale(.98);opacity:0}to{transform:none;opacity:1}}
+.mh{display:flex;align-items:center;gap:14px;padding:22px 24px 16px;border-bottom:1px solid var(--line);position:relative;overflow:hidden}
+.mh::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--brand-h)}
+.mh .mi{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--brand);box-shadow:0 8px 20px -6px rgba(140,72,240,.6)}
+.mh .mi svg{color:#fff;width:22px;height:22px}
+.mh h2{font:700 19px var(--disp)}
+.mh p{color:var(--text-2);font-size:12.5px;margin-top:2px}
+.mh .x{margin-left:auto}
+.mbody{padding:20px 24px}
+.mcols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.mcol{border:1px solid var(--line);background:rgba(148,163,184,.04);border-radius:14px;padding:15px}
+.mcol h4{display:flex;align-items:center;gap:8px;font:650 14px var(--disp);margin-bottom:4px}
+.mcol .nm{color:var(--text-3);font-size:12px;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mcol .vtxt{font-size:12.5px;margin-top:10px;line-height:1.45}
+.mchart{height:170px;margin-top:16px;border:1px solid var(--line);border-radius:14px;padding:10px;background:rgba(148,163,184,.03)}
+.mchart canvas{width:100%;height:100%;display:block}
+.mf{display:flex;gap:10px;justify-content:flex-end;padding:14px 24px 20px}
+
+/* avisos */
+.toasts{position:fixed;right:22px;bottom:22px;z-index:60;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+.toast{display:flex;align-items:center;gap:11px;max-width:460px;padding:12px 16px;border-radius:13px;background:rgba(15,23,42,.94);border:1px solid var(--line-2);box-shadow:0 16px 40px -12px rgba(0,0,0,.6);font-size:13px;animation:tin .35s cubic-bezier(.2,.8,.2,1);backdrop-filter:blur(10px)}
+.toast.out{animation:tout .3s forwards}
+.toast svg{flex:none}
+.toast.info svg{color:#8fb4ff}.toast.ok svg{color:var(--ok)}.toast.warn svg{color:var(--amber)}.toast.bad svg{color:var(--red)}
+.toast.bad{border-color:rgba(244,63,94,.4)}
+@keyframes tin{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+@keyframes tout{to{transform:translateX(30px);opacity:0}}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="g-cpu" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#2470ff"/><stop offset="1" stop-color="#22d3ee"/></linearGradient>
+    <linearGradient id="g-gpu" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#10b981"/><stop offset="1" stop-color="#a3e635"/></linearGradient>
+    <linearGradient id="g-cool" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#34d399"/></linearGradient>
+    <linearGradient id="g-warm" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#34d399"/><stop offset=".6" stop-color="#fbbf24"/><stop offset="1" stop-color="#fb923c"/></linearGradient>
+    <linearGradient id="g-hot" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#fbbf24"/><stop offset=".5" stop-color="#fb7a3c"/><stop offset="1" stop-color="#f43f5e"/></linearGradient>
+    <linearGradient id="g-logo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2470ff"/><stop offset=".52" stop-color="#8c48f0"/><stop offset="1" stop-color="#ff5832"/></linearGradient>
+    <symbol id="logo" viewBox="0 0 64 64">
+      <rect x="1" y="1" width="62" height="62" rx="15" fill="url(#g-logo)"/>
+      <rect x="1" y="1" width="62" height="31" rx="15" fill="#fff" opacity=".08"/>
+      <g stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".92">
+        <path d="M25 18v-6M32 18v-6M39 18v-6M25 46v6M32 46v6M39 46v6M18 25h-6M18 32h-6M18 39h-6M46 25h6M46 32h6M46 39h6"/>
+      </g>
+      <rect x="18" y="18" width="28" height="28" rx="5" fill="rgba(10,12,30,.28)" stroke="#fff" stroke-width="3.2"/>
+      <path d="M34.4 21.4 24.8 33.4H31L28.9 42.6 39.2 29.6H33L35.8 21.4Z" fill="#fff"/>
+    </symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+    <symbol id="i-temp" viewBox="0 0 24 24"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></symbol>
+    <symbol id="i-hist" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2.5"/></symbol>
+    <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/></symbol>
+    <symbol id="i-gpu" viewBox="0 0 24 24"><path d="M2 21V3"/><path d="M2 5h18a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2.26"/><path d="M7 17v3a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1v-3"/><circle cx="16" cy="11" r="2"/><circle cx="8" cy="11" r="2"/></symbol>
+    <symbol id="i-ram" viewBox="0 0 24 24"><path d="M6 19v-3M10 19v-3M14 19v-3M18 19v-3M8 11V9M16 11V9M12 11V9M2 15h20"/><path d="M2 7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1.1a2 2 0 0 0 0 3.84V17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5.06a2 2 0 0 0 0-3.84Z"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></symbol>
+    <symbol id="i-gauge" viewBox="0 0 24 24"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+    <symbol id="i-snow" viewBox="0 0 24 24"><path d="M2 12h20M12 2v20m-8-6 4-4-4-4m16 0-4 4 4 4M8 4l4 4 4-4M8 20l4-4 4 4"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></symbol>
+  </defs>
+</svg>
+
+<div class="app" id="app">
+  <aside class="side">
+    <div class="brand">
+      <svg><use href="#logo"/></svg>
+      <div><b>CoreBlaze</b><small>Stress lab · <span id="ver">v3.0</span></small></div>
+    </div>
+    <div class="nav-t">Menú</div>
+    <button class="nav on" data-p="panel"><svg class="i"><use href="#i-panel"/></svg>Panel<span class="live"></span></button>
+    <button class="nav" data-p="estres"><svg class="i"><use href="#i-flame"/></svg>Prueba de estrés</button>
+    <button class="nav" data-p="sensores"><svg class="i"><use href="#i-temp"/></svg>Sensores<span class="badge" id="nSens">0</span></button>
+    <button class="nav" data-p="historial"><svg class="i"><use href="#i-hist"/></svg>Historial<span class="badge" id="nHist">0</span></button>
+
+    <div class="side-foot">
+      <div class="mini">
+        <div class="mini-h"><span>En vivo</span><span id="miniEstado">reposo</span></div>
+        <div class="mini-r"><span>CPU</span><div class="bar"><i id="mbCpu"></i></div><b id="mtCpu">--</b></div>
+        <div class="mini-r"><span>GPU</span><div class="bar"><i id="mbGpu"></i></div><b id="mtGpu">--</b></div>
+      </div>
+      <div class="mini" style="display:flex;align-items:center;gap:10px">
+        <svg class="i" style="color:#c4b5fd"><use href="#i-shield"/></svg>
+        <div style="font-size:12px;color:var(--text-2);line-height:1.3">Protección térmica<br><b style="color:var(--text);font-family:var(--mono)" id="miniLim">100 °C</b></div>
+      </div>
+      <div class="ver">Hecho para medir, no para adivinar</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="top">
+      <div class="tt"><h1 id="tit">Panel</h1><p id="sub">Monitoreo en tiempo real de CPU y GPU</p></div>
+      <span class="pill st"><span class="dot"></span><span id="stTxt">EN REPOSO</span></span>
+      <span class="pill tm"><span id="reloj">00:00:00</span><small id="resta"></small></span>
+      <button class="icon-btn" id="btnPin" title="Mantener la ventana siempre visible"><svg class="i"><use href="#i-pin"/></svg></button>
+      <button class="go" id="btnGo"><svg class="i"><use href="#i-play"/></svg><span>Iniciar prueba</span></button>
+    </header>
+
+    <div class="paginas">
+      <!-- panel -->
+      <section class="pag on" id="p-panel">
+        <div class="grid">
+          <div class="card gauge-card c3" id="gCpuTemp"></div>
+          <div class="card gauge-card c3" id="gCpuUso"></div>
+          <div class="card gauge-card c3" id="gGpuTemp"></div>
+          <div class="card gauge-card c3" id="gGpuUso"></div>
+
+          <div class="card estado c4" id="estadoCard">
+            <div class="glow"></div>
+            <div class="card-h"><h3>Estado térmico</h3><div class="r"><span class="tag" id="estadoTag">reposo</span></div></div>
+            <div class="big"><div class="ico" id="estIco"><svg class="i"><use href="#i-snow"/></svg></div>
+              <div><div class="w" id="estW">--</div><div class="d" id="estD">Esperando lecturas...</div></div></div>
+            <div class="kv"><span>Throttling del CPU</span><b id="kvThr">no</b></div>
+            <div class="kv"><span>Protección térmica</span><b id="kvLim">100 °C · 10 s</b></div>
+            <div class="kv"><span>Carga activa</span><b id="kvCarga">ninguna</b></div>
+          </div>
+
+          <div class="c8 tiles">
+            <div class="card tile" id="tCpuFrec"></div><div class="card tile" id="tCpuPot"></div><div class="card tile" id="tCpuRend"></div>
+            <div class="card tile" id="tGpuFrec"></div><div class="card tile" id="tGpuPot"></div><div class="card tile" id="tGpuRend"></div>
+          </div>
+
+          <div class="card c6">
+            <div class="card-h"><svg class="i" style="color:var(--cpu)"><use href="#i-cpu"/></svg><h3>Historial CPU</h3>
+              <div class="r"><div class="leg"><span><i style="background:var(--cpu)"></i>Uso <b id="lgCu">--</b></span><span><i style="background:var(--orange)"></i>Temp <b id="lgCt">--</b></span></div></div></div>
+            <div class="chart"><canvas id="chCpu"></canvas></div>
+          </div>
+          <div class="card c6">
+            <div class="card-h"><svg class="i" style="color:var(--gpu)"><use href="#i-gpu"/></svg><h3>Historial GPU</h3>
+              <div class="r"><div class="leg"><span><i style="background:var(--gpu)"></i>Uso <b id="lgGu">--</b></span><span><i style="background:var(--orange)"></i>Temp <b id="lgGt">--</b></span></div>
+              <div class="seg" id="rango"><button data-r="60" class="on">1 min</button><button data-r="300">5 min</button></div></div></div>
+            <div class="chart"><canvas id="chGpu"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- configuracion de la prueba -->
+      <section class="pag" id="p-estres">
+        <div class="grid">
+          <div class="c8" style="display:flex;flex-direction:column;gap:16px">
+            <div class="card">
+              <div class="sec-t">Componentes a estresar</div>
+              <div class="opts c2">
+                <button class="opt" id="oCpu"><div class="oi" style="color:var(--cpu);background:rgba(59,140,255,.12)"><svg class="i"><use href="#i-cpu"/></svg></div>
+                  <div style="min-width:0"><b>Procesador</b><p id="oCpuN">--</p></div><span class="sw"></span></button>
+                <button class="opt" id="oGpu"><div class="oi" style="color:var(--gpu);background:rgba(52,211,153,.12)"><svg class="i"><use href="#i-gpu"/></svg></div>
+                  <div style="min-width:0"><b>Tarjeta gráfica</b><p id="oGpuN">--</p></div><span class="sw"></span></button>
+              </div>
+            </div>
+            <div class="card" id="secModo">
+              <div class="sec-t">Tipo de carga del CPU</div>
+              <div class="opts c3x" id="modos"></div>
+            </div>
+            <div class="card" id="secHilos">
+              <div class="sec-t">Hilos del CPU</div>
+              <div class="slider-row"><div class="val" id="hVal">20<small>hilos</small></div><input type="range" id="hilos" min="1" max="20" step="1"></div>
+              <div class="chips" style="margin-top:14px" id="hPre"><button class="chip" data-f=".25">25 %</button><button class="chip" data-f=".5">50 %</button><button class="chip" data-f=".75">75 %</button><button class="chip" data-f="1">Todos</button></div>
+            </div>
+            <div class="card" id="secGpu">
+              <div class="sec-t">Tarjeta gráfica a usar</div>
+              <div class="opts" id="gpus"></div>
+              <div class="note" id="notaIntel" style="display:none"><svg class="i"><use href="#i-alert"/></svg><span>Las GPU Intel integradas se pueden estresar, pero sus sensores no se leen para evitar un fallo conocido del driver.</span></div>
+            </div>
+          </div>
+          <div class="c4" style="display:flex;flex-direction:column;gap:16px">
+            <div class="card">
+              <div class="sec-t"><svg class="i"><use href="#i-clock"/></svg>Duración</div>
+              <div class="chips" id="durs"></div>
+            </div>
+            <div class="card">
+              <div class="sec-t"><svg class="i"><use href="#i-shield"/></svg>Protección térmica</div>
+              <div class="slider-row"><div class="val" id="lVal">100<small>°C</small></div><input type="range" id="limite" min="80" max="105" step="1" style="--c1:#fbbf24;--c2:#f43f5e"></div>
+              <div class="note"><svg class="i"><use href="#i-info"/></svg><span>La prueba se detiene sola si el CPU o la GPU pasan este límite durante 10 segundos seguidos. Los picos breves son normales.</span></div>
+            </div>
+            <div class="card resumen-cfg">
+              <div class="sec-t">Resumen</div>
+              <div class="kv"><span>CPU</span><b id="rcCpu">--</b></div>
+              <div class="kv"><span>GPU</span><b id="rcGpu">--</b></div>
+              <div class="kv"><span>Duración</span><b id="rcDur">--</b></div>
+              <div class="kv" style="margin-bottom:16px"><span>Límite</span><b id="rcLim">--</b></div>
+              <button class="go big" id="btnGo2"><svg class="i"><use href="#i-play"/></svg><span>Iniciar prueba</span></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- sensores -->
+      <section class="pag" id="p-sensores">
+        <div class="toolbar">
+          <label class="search"><svg class="i"><use href="#i-search"/></svg><input id="buscar" placeholder="Buscar sensor..."></label>
+          <div class="chips" id="filtros"></div>
+        </div>
+        <div class="card" style="padding:0">
+          <div class="tabla-wrap">
+            <table class="tabla"><thead><tr><th>Equipo</th><th>Tipo</th><th>Sensor</th><th class="mb"></th><th class="n">Actual</th><th class="n">Máximo</th></tr></thead><tbody id="tb"></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- historial -->
+      <section class="pag" id="p-historial">
+        <div class="toolbar">
+          <div style="color:var(--text-2);font-size:13px" id="histInfo">--</div>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button class="btn" id="btnCarpeta"><svg class="i"><use href="#i-folder"/></svg>Abrir carpeta</button>
+            <button class="btn dan" id="btnBorrar"><svg class="i"><use href="#i-trash"/></svg>Borrar historial</button>
+          </div>
+        </div>
+        <div class="hist" id="hist"></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="modal" id="modal"><div class="mbox" id="mbox"></div></div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const ic = (id, extra = '') => `<svg class="i" ${extra}><use href="#${id}"/></svg>`;
+const enviar = o => { try { window.chrome.webview.postMessage(o); } catch (e) {} };
+const nf = (v, d = 0) => v == null || isNaN(v) ? '--' : Number(v).toLocaleString('es-CL', { minimumFractionDigits: d, maximumFractionDigits: d });
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const colTemp = t => t == null ? '#5f6b84' : t < 70 ? '#22d3ee' : t < 85 ? '#34d399' : t < 92 ? '#fbbf24' : t < 97 ? '#fb7a3c' : '#f43f5e';
+const gradTemp = t => t == null || t < 70 ? 'g-cool' : t < 88 ? 'g-warm' : 'g-hot';
+
+const S = {
+  info: null, est: null, rango: 60, pag: 'panel', encima: false, filtro: 'todos', buscar: '',
+  h: { cu: [], ct: [], gu: [], gt: [] }, historial: [],
+  cfg: { cpu: true, gpu: true, modo: 0, hilos: 0, gpuIndice: -1, minutos: 0, limite: 100 }
+};
+let tGuardar = 0;
+const guardarCfg = () => { clearTimeout(tGuardar); tGuardar = setTimeout(() => enviar({ accion: 'config', cfg: { ...S.cfg, encima: S.encima } }), 400); };
+
+/* ---------- medidores ---------- */
+const C = 2 * Math.PI * 50, ARC = C * 0.75;
+function crearGauge(id, titulo, color, icono) {
+  let ticks = '';
+  for (let i = 0; i <= 10; i++) {
+    const a = (135 + i * 27) * Math.PI / 180, r1 = 62, r2 = i % 5 ? 65 : 67;
+    ticks += `<line class="g-tick" x1="${60 + r1 * Math.cos(a)}" y1="${60 + r1 * Math.sin(a)}" x2="${60 + r2 * Math.cos(a)}" y2="${60 + r2 * Math.sin(a)}"/>`;
+  }
+  $('#' + id).innerHTML = `
+    <div class="card-h"><span class="kdot" style="background:${color};box-shadow:0 0 10px ${color}"></span><h3>${titulo}</h3><div class="r">${ic(icono, `style="color:${color};width:16px;height:16px"`)}</div></div>
+    <div class="gw"><svg viewBox="0 0 120 120">${ticks}
+      <circle class="g-track" cx="60" cy="60" r="50" stroke-dasharray="${ARC} ${C}" transform="rotate(135 60 60)"/>
+      <circle class="g-val" cx="60" cy="60" r="50" stroke-dasharray="0 ${C}" transform="rotate(135 60 60)"/></svg>
+      <div class="gc"><div class="v">--</div><div class="u"></div></div></div>
+    <div class="foot"><span class="tag t1"></span><span class="tag t2"></span></div>`;
+}
+function setGauge(id, valor, max, unidad, grad, glow, t1, t2) {
+  const el = $('#' + id), p = valor == null ? 0 : Math.max(0, Math.min(1, valor / max));
+  const arc = el.querySelector('.g-val');
+  arc.setAttribute('stroke-dasharray', `${ARC * p} ${C}`);
+  arc.setAttribute('stroke', `url(#${grad})`);
+  arc.style.setProperty('--glow', glow + '99');
+  el.style.setProperty('--halo', glow + '22');
+  el.querySelector('.v').textContent = valor == null ? '--' : nf(valor, 0);
+  el.querySelector('.u').textContent = valor == null ? 'sin lectura' : unidad;
+  const a = el.querySelector('.t1'), b = el.querySelector('.t2');
+  a.innerHTML = t1 || ''; a.classList.toggle('hidden', !t1);
+  b.innerHTML = t2 || ''; b.classList.toggle('hidden', !t2);
+}
+
+/* ---------- fichas ---------- */
+function crearTile(id, titulo, icono, color) {
+  $('#' + id).innerHTML = `<div class="l"><span class="ic" style="background:${color}1f;color:${color}">${ic(icono)}</span>${titulo}</div>
+    <div class="v">--</div><div class="s">--</div><div class="bar"><i style="background:${color}"></i></div>`;
+}
+function setTile(id, valor, unidad, sub, p, alerta) {
+  const el = $('#' + id);
+  el.querySelector('.v').innerHTML = valor == null ? '--' : `${valor}<small>${unidad}</small>`;
+  const s = el.querySelector('.s'); s.textContent = sub; s.classList.toggle('alerta', !!alerta);
+  el.querySelector('.bar i').style.width = (p == null ? 0 : Math.max(0, Math.min(1, p)) * 100) + '%';
+}
+
+/* ---------- graficos ---------- */
+function grafico(cv, series, n, opt = {}) {
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const g = cv.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+  const ejes = opt.ejes !== false;
+  const P = ejes ? { l: 36, r: 34, t: 8, b: 20 } : { l: 2, r: 2, t: 4, b: 2 };
+  const W = w - P.l - P.r, H = h - P.t - P.b;
+  if (ejes) {
+    g.font = '11px "Cascadia Mono", Consolas, monospace';
+    g.textBaseline = 'middle';
+    for (let i = 0; i <= 4; i++) {
+      const y = P.t + H * i / 4;
+      g.strokeStyle = 'rgba(148,163,184,.08)'; g.lineWidth = 1; g.setLineDash([3, 4]);
+      g.beginPath(); g.moveTo(P.l, y); g.lineTo(P.l + W, y); g.stroke(); g.setLineDash([]);
+      g.fillStyle = 'rgba(148,163,184,.55)';
+      g.textAlign = 'right'; g.fillText((100 - i * 25) + '%', P.l - 8, y);
+      g.textAlign = 'left'; g.fillText(Math.round(105 - i * 105 / 4) + '°', P.l + W + 8, y);
+    }
+    g.textAlign = 'left'; g.fillStyle = 'rgba(148,163,184,.4)';
+    g.fillText(n >= 120 ? `hace ${Math.round(n / 60)} min` : `hace ${n} s`, P.l, h - 7);
+    g.textAlign = 'right'; g.fillText('ahora', P.l + W, h - 7);
+  }
+  for (const s of series) {
+    const d = s.d.slice(-n);
+    if (d.length < 2) continue;
+    const paso = W / (n - 1), x0 = P.l + W - paso * (d.length - 1);
+    const pts = d.map((v, i) => [x0 + paso * i, P.t + H - Math.max(0, Math.min(1, (v || 0) / s.max)) * H]);
+    const camino = () => {
+      g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) {
+        const mx = (pts[i - 1][0] + pts[i][0]) / 2, my = (pts[i - 1][1] + pts[i][1]) / 2;
+        g.quadraticCurveTo(pts[i - 1][0], pts[i - 1][1], mx, my);
+      }
+      g.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+    };
+    if (s.relleno) {
+      camino();
+      g.lineTo(pts[pts.length - 1][0], P.t + H); g.lineTo(pts[0][0], P.t + H); g.closePath();
+      const gr = g.createLinearGradient(0, P.t, 0, P.t + H);
+      gr.addColorStop(0, s.c + '55'); gr.addColorStop(1, s.c + '00');
+      g.fillStyle = gr; g.fill();
+    }
+    camino();
+    g.strokeStyle = s.c; g.lineWidth = s.ancho || 2; g.lineJoin = 'round';
+    g.shadowColor = s.c; g.shadowBlur = 10; g.stroke(); g.shadowBlur = 0;
+    if (ejes) {
+      const [lx, ly] = pts[pts.length - 1];
+      g.fillStyle = s.c; g.beginPath(); g.arc(lx, ly, 3.5, 0, Math.PI * 2); g.fill();
+      g.fillStyle = s.c + '33'; g.beginPath(); g.arc(lx, ly, 8, 0, Math.PI * 2); g.fill();
+    }
+  }
+}
+function dibujarGraficos() {
+  const h = S.h;
+  grafico($('#chCpu'), [{ d: h.cu, c: '#3b8cff', max: 100, relleno: true }, { d: h.ct, c: '#fb7a3c', max: 105 }], S.rango);
+  grafico($('#chGpu'), [{ d: h.gu, c: '#34d399', max: 100, relleno: true }, { d: h.gt, c: '#fb7a3c', max: 105 }], S.rango);
+}
+
+/* ---------- navegacion ---------- */
+const PAGS = {
+  panel: ['Panel', 'Monitoreo en tiempo real de CPU y GPU'],
+  estres: ['Prueba de estrés', 'Configura la carga y la protección térmica'],
+  sensores: ['Sensores', 'Todas las lecturas del hardware en vivo'],
+  historial: ['Historial', 'Resultados de tus pruebas anteriores']
+};
+function ir(p) {
+  if (S.pag !== p) $('.paginas').scrollTop = 0;
+  S.pag = p;
+  $$('.nav').forEach(b => b.classList.toggle('on', b.dataset.p === p));
+  $$('.pag').forEach(s => s.classList.toggle('on', s.id === 'p-' + p));
+  $('#tit').textContent = PAGS[p][0];
+  $('#sub').textContent = p === 'panel' && S.info ? `${S.info.cpu} · ${S.est?.gpu?.nombre || ''}` : PAGS[p][1];
+  if (p === 'panel') requestAnimationFrame(dibujarGraficos);
+  if (p === 'sensores' && S.est) tablaSensores();
+  if (p === 'historial') pintarHistorial();
+}
+$$('.nav').forEach(b => b.onclick = () => ir(b.dataset.p));
+$$('#rango button').forEach(b => b.onclick = () => { S.rango = +b.dataset.r; $$('#rango button').forEach(x => x.classList.toggle('on', x === b)); dibujarGraficos(); });
+
+/* ---------- configuracion ---------- */
+const MODOS_INFO = [
+  { icono: 'i-flame', color: '#fb7a3c', desc: 'Máximo calor y consumo. AVX2 + FMA en todos los hilos.', calor: 3 },
+  { icono: 'i-cpu', color: '#3b8cff', desc: 'Carga mixta de punto flotante y enteros.', calor: 2 },
+  { icono: 'i-ram', color: '#a78bfa', desc: 'Lectura y escritura continua de la memoria RAM.', calor: 1 }
+];
+const DURS = [[0, 'Sin límite'], [1, '1 min'], [5, '5 min'], [10, '10 min'], [15, '15 min'], [30, '30 min'], [60, '1 hora']];
+
+function pintarConfig() {
+  const c = S.cfg, i = S.info;
+  if (!i) return;
+  $('#oCpu').classList.toggle('on', c.cpu);
+  $('#oGpu').classList.toggle('on', c.gpu && i.gpus.length > 0);
+  $('#oGpu').classList.toggle('off', i.gpus.length === 0);
+  $('#secModo').style.opacity = $('#secHilos').style.opacity = c.cpu ? 1 : .45;
+  $('#secGpu').style.opacity = c.gpu ? 1 : .45;
+  $$('#modos .opt').forEach((b, k) => b.classList.toggle('on', k === c.modo));
+  const hil = $('#hilos');
+  hil.value = c.hilos;
+  hil.style.setProperty('--p', ((c.hilos - 1) / Math.max(1, i.hilos - 1) * 100) + '%');
+  $('#hVal').innerHTML = `${c.hilos}<small>${c.hilos === 1 ? 'hilo' : 'hilos'}</small>`;
+  $$('#hPre .chip').forEach(b => b.classList.toggle('on', Math.max(1, Math.round(i.hilos * b.dataset.f)) === c.hilos));
+  $$('#gpus .opt').forEach((b, k) => b.classList.toggle('on', k === c.gpuIndice));
+  const g = i.gpus[c.gpuIndice];
+  $('#notaIntel').style.display = g && /intel/i.test(g.nombre) ? 'flex' : 'none';
+  $$('#durs .chip').forEach(b => b.classList.toggle('on', +b.dataset.m === c.minutos));
+  const lim = $('#limite');
+  lim.value = c.limite;
+  lim.style.setProperty('--p', ((c.limite - 80) / 25 * 100) + '%');
+  $('#lVal').innerHTML = `${c.limite}<small>°C</small>`;
+  $('#oGpuN').textContent = g ? g.nombre : 'No disponible';
+  $('#rcCpu').textContent = c.cpu ? `${i.modos[c.modo].nombre.split(' (')[0]} · ${c.hilos} hilos` : 'no';
+  $('#rcGpu').textContent = c.gpu && g ? g.nombre.replace(/NVIDIA |GeForce |\(R\)|Laptop GPU/g, '').trim() : 'no';
+  $('#rcDur').textContent = c.minutos ? c.minutos + ' min' : 'sin límite';
+  $('#rcLim').textContent = c.limite + ' °C';
+  $('#miniLim').textContent = c.limite + ' °C';
+  $('#kvLim').textContent = c.limite + ' °C · 10 s';
+}
+function cambiar(k, v) { S.cfg[k] = v; guardarCfg(); pintarConfig(); }
+
+function initConfig() {
+  const i = S.info, c = S.cfg;
+  if (!c.hilos || c.hilos > i.hilos) c.hilos = i.hilos;
+  if (c.gpuIndice < 0 || c.gpuIndice >= i.gpus.length) c.gpuIndice = i.gpuSel;
+  if (!i.gpus.length) c.gpu = false;
+  $('#oCpuN').textContent = `${i.cpu} · ${i.hilos} hilos`;
+  $('#modos').innerHTML = i.modos.map((m, k) => {
+    const x = MODOS_INFO[k];
+    const nombre = m.nombre.split(' (')[0], extra = m.nombre.includes('(') ? m.nombre.slice(m.nombre.indexOf('(') + 1, -1) : '';
+    return `<button class="opt" data-k="${k}"><div class="oi" style="color:${x.color};background:${x.color}1f">${ic(x.icono)}</div>
+      <div><b>${esc(nombre)}</b><p>${esc(x.desc)}</p><div class="heat">${[1, 2, 3].map(n => `<i class="${n <= x.calor ? 'f' : ''}"></i>`).join('')}</div>
+      <p style="margin-top:8px;font-family:var(--mono);font-size:11.5px">${esc(extra || m.unidad)}</p></div><span class="chk">${ic('i-check')}</span></button>`;
+  }).join('');
+  $$('#modos .opt').forEach(b => b.onclick = () => cambiar('modo', +b.dataset.k));
+  $('#gpus').innerHTML = i.gpus.length ? i.gpus.map(g => `<button class="opt" data-k="${g.indice}"><div class="oi" style="color:${/intel/i.test(g.nombre) ? '#8fb4ff' : 'var(--gpu)'}">${ic('i-gpu')}</div>
+      <div><b>${esc(g.nombre)}</b><p>${nf(g.memoria / 1024, 1)} GB de memoria dedicada${/intel/i.test(g.nombre) ? ' · integrada' : ' · dedicada'}</p></div><span class="chk">${ic('i-check')}</span></button>`).join('')
+    : `<div class="note">${ic('i-alert')}<span>No se detectó una GPU compatible con DirectX 11.</span></div>`;
+  $$('#gpus .opt').forEach(b => b.onclick = () => { cambiar('gpuIndice', +b.dataset.k); enviar({ accion: 'gpu', indice: S.cfg.gpuIndice }); });
+  $('#durs').innerHTML = DURS.map(([m, t]) => `<button class="chip" data-m="${m}">${t}</button>`).join('');
+  $$('#durs .chip').forEach(b => b.onclick = () => cambiar('minutos', +b.dataset.m));
+  const hil = $('#hilos'); hil.max = i.hilos;
+  hil.oninput = () => cambiar('hilos', +hil.value);
+  $$('#hPre .chip').forEach(b => b.onclick = () => cambiar('hilos', Math.max(1, Math.round(i.hilos * b.dataset.f))));
+  $('#limite').oninput = e => cambiar('limite', +e.target.value);
+  $('#oCpu').onclick = () => { if (!S.est?.corriendo) cambiar('cpu', !S.cfg.cpu); };
+  $('#oGpu').onclick = () => { if (!S.est?.corriendo && i.gpus.length) cambiar('gpu', !S.cfg.gpu); };
+  enviar({ accion: 'gpu', indice: c.gpuIndice });
+  pintarConfig();
+}
+
+/* ---------- acciones ---------- */
+function alternar() {
+  if (S.est?.corriendo) { enviar({ accion: 'detener' }); return; }
+  const c = S.cfg;
+  enviar({ accion: 'iniciar', cpu: c.cpu, gpu: c.gpu, modo: c.modo, hilos: c.hilos, gpuIndice: c.gpuIndice, minutos: c.minutos, limite: c.limite });
+}
+$('#btnGo').onclick = alternar;
+$('#btnGo2').onclick = alternar;
+$('#btnPin').onclick = () => { S.encima = !S.encima; $('#btnPin').classList.toggle('on', S.encima); enviar({ accion: 'encima', valor: S.encima }); guardarCfg(); aviso(S.encima ? 'Ventana fijada encima de las demás' : 'Ventana sin fijar', 'info'); };
+$('#btnCarpeta').onclick = () => enviar({ accion: 'carpeta' });
+$('#btnBorrar').onclick = () => {
+  if (!S.historial.length) return;
+  confirmar('Borrar historial', `Se eliminarán ${S.historial.length} pruebas guardadas. Esta acción no se puede deshacer.`, 'Borrar todo', () => enviar({ accion: 'borrarHistorial' }));
+};
+document.addEventListener('keydown', e => {
+  if (e.key === 'F9') { e.preventDefault(); alternar(); }
+  if (e.key === 'Escape') cerrarModal();
+  if (e.ctrlKey && ['1', '2', '3', '4'].includes(e.key)) ir(['panel', 'estres', 'sensores', 'historial'][+e.key - 1]);
+});
+$('#buscar').oninput = e => { S.buscar = e.target.value.trim().toLowerCase(); tablaSensores(); };
+
+/* ---------- avisos ---------- */
+function aviso(texto, nivel = 'info') {
+  const icono = { info: 'i-info', ok: 'i-ok', warn: 'i-alert', bad: 'i-alert' }[nivel] || 'i-info';
+  const t = document.createElement('div');
+  t.className = 'toast ' + nivel;
+  t.innerHTML = ic(icono) + `<span>${esc(texto)}</span>`;
+  $('#toasts').appendChild(t);
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 320); }, nivel === 'bad' ? 7000 : 4200);
+}
+
+/* ---------- estado en vivo ---------- */
+function empujar(arr, v) { arr.push(v == null ? 0 : v); if (arr.length > 300) arr.shift(); }
+
+function estado(e) {
+  const prev = S.est; S.est = e;
+  const cpu = e.cpu, gpu = e.gpu;
+  document.body.classList.toggle('running', e.corriendo);
+  $('#stTxt').textContent = e.corriendo ? 'EN PRUEBA' : 'EN REPOSO';
+  $('#reloj').textContent = e.tiempo;
+  $('#resta').textContent = e.restante >= 0 ? ` · faltan ${Math.floor(e.restante / 60)}:${String(e.restante % 60).padStart(2, '0')}` : '';
+  $$('.go span').forEach(s => s.textContent = e.corriendo ? 'Detener prueba' : 'Iniciar prueba');
+  $$('.go use').forEach(u => u.setAttribute('href', e.corriendo ? '#i-stop' : '#i-play'));
+  $('#miniEstado').textContent = e.corriendo ? 'en prueba' : 'reposo';
+  if (prev?.corriendo !== e.corriendo) $$('#oCpu,#oGpu,#modos .opt,#gpus .opt').forEach(b => b.disabled = e.corriendo);
+  if (S.pag === 'panel') $('#sub').textContent = `${S.info?.cpu || ''} · ${gpu.nombre}`;
+
+  empujar(S.h.cu, cpu.uso); empujar(S.h.ct, cpu.temp); empujar(S.h.gu, gpu.uso); empujar(S.h.gt, gpu.temp);
+
+  // medidores
+  setGauge('gCpuTemp', cpu.temp, 105, '°C', gradTemp(cpu.temp), colTemp(cpu.temp),
+    cpu.tempMax ? `máx <b>${nf(cpu.tempMax)}°</b>` : '', cpu.temp == null ? 'requiere administrador' : cpu.pot ? `<b>${nf(cpu.pot, 1)}</b> W` : '');
+  setGauge('gCpuUso', cpu.uso, 100, '% de uso', 'g-cpu', '#3b8cff',
+    `<b>${S.info?.hilos || '--'}</b> hilos`, cpu.frec ? `<b>${nf(cpu.frec)}</b> MHz` : '');
+  setGauge('gGpuTemp', gpu.temp, 105, '°C', gradTemp(gpu.temp), colTemp(gpu.temp),
+    gpu.hot ? `hot spot <b>${nf(gpu.hot)}°</b>` : gpu.sinSensores ? 'sin sensores' : '', gpu.tempMax ? `máx <b>${nf(gpu.tempMax)}°</b>` : '');
+  setGauge('gGpuUso', gpu.uso, 100, '% de uso', 'g-gpu', '#34d399',
+    gpu.frec ? `<b>${nf(gpu.frec)}</b> MHz` : '', gpu.pot ? `<b>${nf(gpu.pot, 1)}</b> W` : '');
+
+  // fichas
+  setTile('tCpuFrec', cpu.frec == null ? null : nf(cpu.frec), 'MHz',
+    cpu.throttling ? '⚠ Posible throttling térmico' : cpu.picoFrec ? `Pico ${nf(cpu.picoFrec)} MHz` : 'Promedio de núcleos', cpu.frec / 5200, cpu.throttling);
+  setTile('tCpuPot', cpu.pot == null ? null : nf(cpu.pot, 1), 'W', cpu.potMax ? `Máxima ${nf(cpu.potMax, 1)} W` : 'Consumo del paquete', cpu.pot / 120);
+  setTile('tCpuRend', cpu.rend == null ? null : nf(cpu.rend, cpu.rend < 100 ? 1 : 0), cpu.unidad, cpu.activo ? cpu.modo : 'Se mide durante la prueba', cpu.rend == null ? 0 : 1);
+  setTile('tGpuFrec', gpu.frec == null ? null : nf(gpu.frec), 'MHz', 'Reloj del núcleo', gpu.frec / 3000);
+  setTile('tGpuPot', gpu.pot == null ? null : nf(gpu.pot, 1), 'W', gpu.potMax ? `Máxima ${nf(gpu.potMax, 1)} W` : 'Consumo de la tarjeta', gpu.pot / 140);
+  setTile('tGpuRend', gpu.rend == null ? null : nf(gpu.rend), 'GFLOPS', gpu.activo ? 'FP32 · compute shader' : 'Se mide durante la prueba', gpu.rend == null ? 0 : 1);
+
+  // leyendas
+  $('#lgCu').textContent = nf(cpu.uso) + '%'; $('#lgCt').textContent = cpu.temp == null ? '--' : nf(cpu.temp) + '°';
+  $('#lgGu').textContent = nf(gpu.uso) + '%'; $('#lgGt').textContent = gpu.temp == null ? '--' : nf(gpu.temp) + '°';
+
+  // barra lateral
+  $('#mtCpu').textContent = cpu.temp == null ? '--' : nf(cpu.temp) + '°';
+  $('#mtGpu').textContent = gpu.temp == null ? '--' : nf(gpu.temp) + '°';
+  $('#mbCpu').style.width = (cpu.temp || 0) / 105 * 100 + '%'; $('#mbCpu').style.background = colTemp(cpu.temp);
+  $('#mbGpu').style.width = (gpu.temp || 0) / 105 * 100 + '%'; $('#mbGpu').style.background = colTemp(gpu.temp);
+  $('#nSens').textContent = e.sensores.length;
+
+  estadoTermico(e);
+  if (S.pag === 'panel') dibujarGraficos();
+  if (S.pag === 'sensores') tablaSensores();
+}
+
+function estadoTermico(e) {
+  const cpu = e.cpu, gpu = e.gpu;
+  const t = Math.max(cpu.temp || 0, gpu.temp || 0) || null;
+  let w, d, color, icono;
+  if (cpu.throttling) { w = 'Throttling'; d = 'El CPU baja su frecuencia para protegerse del calor.'; color = '#f43f5e'; icono = 'i-alert'; }
+  else if (t == null) { w = 'Sin datos'; d = 'Ejecuta CoreBlaze como administrador para leer las temperaturas.'; color = '#9aa6bb'; icono = 'i-info'; }
+  else if (t >= 95) { w = 'Crítico'; d = 'Temperatura en el límite del hardware. Vigila la prueba.'; color = '#f43f5e'; icono = 'i-flame'; }
+  else if (t >= 85) { w = 'Caliente'; d = e.corriendo ? 'Normal bajo carga máxima en un laptop.' : 'Más caliente de lo habitual en reposo.'; color = '#fb7a3c'; icono = 'i-flame'; }
+  else if (t >= 70) { w = 'Templado'; d = 'Temperatura moderada, todo en orden.'; color = '#fbbf24'; icono = 'i-temp'; }
+  else { w = 'Fresco'; d = e.corriendo ? 'La refrigeración está sobrada para esta carga.' : 'El equipo está frío y en reposo.'; color = '#22d3ee'; icono = 'i-snow'; }
+  $('#estW').textContent = w; $('#estW').style.color = color; $('#estD').textContent = d;
+  const ico = $('#estIco');
+  ico.style.color = color; ico.style.background = color + '1f'; ico.style.borderColor = color + '55';
+  ico.querySelector('use').setAttribute('href', '#' + icono);
+  $('#estadoCard').style.setProperty('--eg', color + '2e');
+  $('#estadoTag').textContent = e.corriendo ? 'en prueba' : 'reposo';
+  $('#kvThr').textContent = cpu.throttling ? 'sí' : 'no';
+  $('#kvThr').style.color = cpu.throttling ? '#fda4af' : '';
+  const cargas = [];
+  if (cpu.activo) cargas.push('CPU ' + cpu.modo.split(' (')[0].toLowerCase());
+  if (gpu.activo) cargas.push('GPU');
+  $('#kvCarga').textContent = cargas.join(' + ') || 'ninguna';
+}
+
+/* ---------- sensores ---------- */
+const TIPOS = { 'temp c': ['Temperatura', '°C', 0], 'uso %': ['Uso', '%', 1], 'mhz': ['Reloj', 'MHz', 2], 'watts': ['Potencia', 'W', 3], 'volts': ['Voltaje', 'V', 4], 'mb': ['Memoria', 'MB', 5], 'rpm': ['Ventilador', 'RPM', 6] };
+const FILTROS = [['todos', 'Todos'], ['cpu', 'CPU'], ['gpu', 'GPU'], ['temp c', 'Temperatura'], ['uso %', 'Uso'], ['mhz', 'Reloj'], ['watts', 'Potencia']];
+$('#filtros').innerHTML = FILTROS.map(([k, t]) => `<button class="chip${k === 'todos' ? ' on' : ''}" data-f="${k}">${t}</button>`).join('');
+$$('#filtros .chip').forEach(b => b.onclick = () => { S.filtro = b.dataset.f; $$('#filtros .chip').forEach(x => x.classList.toggle('on', x === b)); tablaSensores(); });
+
+function tablaSensores() {
+  if (!S.est) return;
+  const f = S.filtro, q = S.buscar;
+  const filas = S.est.sensores
+    .filter(s => f === 'todos' || s.d === f || s.t === f)
+    .filter(s => !q || (s.n + ' ' + s.d + ' ' + (TIPOS[s.t]?.[0] || '')).toLowerCase().includes(q))
+    .sort((a, b) => a.d.localeCompare(b.d) || (TIPOS[a.t]?.[2] ?? 9) - (TIPOS[b.t]?.[2] ?? 9));
+  $('#tb').innerHTML = filas.map(s => {
+    const [tipo, u] = TIPOS[s.t] || [s.t, ''];
+    const d = s.t === 'volts' ? 3 : s.t === 'mhz' || s.t === 'rpm' ? 0 : 1;
+    if (s.t === 'uso %') s = { ...s, v: Math.min(100, s.v), m: Math.min(100, s.m) };
+    let barra = '';
+    if (s.t === 'temp c') barra = `<div class="bar"><i style="width:${Math.min(100, s.v / 105 * 100)}%;background:${colTemp(s.v)}"></i></div>`;
+    else if (s.t === 'uso %') barra = `<div class="bar"><i style="width:${Math.min(100, s.v)}%;background:${s.d === 'gpu' ? '#34d399' : '#3b8cff'}"></i></div>`;
+    const color = s.t === 'temp c' ? `style="color:${colTemp(s.v)}"` : '';
+    return `<tr><td><span class="dev ${s.d}">${s.d.toUpperCase()}</span></td><td class="tipo">${tipo}</td><td>${esc(s.n)}</td><td class="mb">${barra}</td>
+      <td class="n" ${color}>${nf(s.v, d)} <span style="color:var(--text-3)">${u}</span></td><td class="n" style="color:var(--text-2)">${nf(s.m, d)}</td></tr>`;
+  }).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--text-3);padding:40px">Sin sensores que coincidan</td></tr>`;
+}
+
+/* ---------- historial ---------- */
+const etVer = { ok: 'Bien', warn: 'Atención', bad: 'Revisar', na: 'Sin datos' };
+function pintarHistorial() {
+  const l = S.historial;
+  $('#nHist').textContent = l.length;
+  $('#histInfo').textContent = l.length ? `${l.length} ${l.length === 1 ? 'prueba guardada' : 'pruebas guardadas'} · se conservan las últimas 30` : 'Sin pruebas guardadas';
+  if (!l.length) {
+    $('#hist').innerHTML = `<div class="vacio" style="grid-column:1/-1"><div class="vi">${ic('i-chart')}</div><h3>Aún no hay pruebas</h3><p>Cuando termines una prueba de estrés, su resultado aparecerá aquí.</p>
+      <button class="btn pri" style="margin-top:18px" onclick="ir('estres')">${ic('i-flame')}Configurar una prueba</button></div>`;
+    return;
+  }
+  $('#hist').innerHTML = l.map(r => `
+    <div class="card hc">
+      <div class="top-r"><div style="min-width:0"><div class="fecha">${esc(r.inicio)}</div><div class="meta">${esc(r.duracion)} · ${esc(r.motivo)}</div></div>
+        <div class="vs" style="margin-left:auto">${r.conCpu ? `<span class="vb ${r.cpu.nivel}">CPU · ${etVer[r.cpu.nivel]}</span>` : ''}${r.conGpu ? `<span class="vb ${r.gpu.nivel}">GPU · ${etVer[r.gpu.nivel]}</span>` : ''}</div></div>
+      <div class="nums">
+        <div class="num"><span>CPU temp</span><b style="color:${colTemp(r.cpu.temp)}">${r.conCpu && r.cpu.temp ? nf(r.cpu.temp, 1) + '°' : '--'}</b></div>
+        <div class="num"><span>GPU temp</span><b style="color:${colTemp(r.gpu.temp)}">${r.conGpu && r.gpu.temp ? nf(r.gpu.temp, 1) + '°' : '--'}</b></div>
+        <div class="num"><span>CPU ${esc(r.unidad || '')}</span><b>${r.conCpu ? nf(r.cpu.rend, 1) : '--'}</b></div>
+        <div class="num"><span>GPU GFLOPS</span><b>${r.conGpu ? nf(r.gpu.rend) : '--'}</b></div>
+      </div>
+      <div class="spark"><canvas data-id="${esc(r.id)}"></canvas></div>
+      <div class="acts"><button class="btn" data-csv="${esc(r.id)}">${ic('i-down')}CSV</button><button class="btn pri" data-ver="${esc(r.id)}">${ic('i-chart')}Ver resumen</button></div>
+    </div>`).join('');
+  $$('#hist canvas').forEach(cv => {
+    const r = l.find(x => x.id === cv.dataset.id);
+    const n = Math.max(r.serie.cpuTemp.length, r.serie.gpuTemp.length, 2);
+    const s = [];
+    if (r.conCpu) s.push({ d: r.serie.cpuTemp, c: '#3b8cff', max: 105, relleno: true, ancho: 1.6 });
+    if (r.conGpu) s.push({ d: r.serie.gpuTemp, c: '#34d399', max: 105, relleno: true, ancho: 1.6 });
+    grafico(cv, s, n, { ejes: false });
+  });
+  $$('#hist [data-ver]').forEach(b => b.onclick = () => resumen(l.find(x => x.id === b.dataset.ver)));
+  $$('#hist [data-csv]').forEach(b => b.onclick = () => enviar({ accion: 'exportar', id: b.dataset.csv }));
+}
+
+/* ---------- modal ---------- */
+function cerrarModal() { $('#modal').classList.remove('on'); }
+$('#modal').onclick = e => { if (e.target.id === 'modal') cerrarModal(); };
+
+function colResumen(titulo, color, icono, nombre, x, filas) {
+  return `<div class="mcol"><h4>${ic(icono, `style="color:${color}"`)}${titulo}<span class="vb ${x.nivel}" style="margin-left:auto">${etVer[x.nivel]}</span></h4>
+    <div class="nm">${esc(nombre)}</div>${filas.map(([k, v]) => `<div class="kv"><span>${k}</span><b>${v}</b></div>`).join('')}
+    <div class="vtxt" style="color:${{ ok: '#6ee7b7', warn: '#fcd34d', bad: '#fda4af', na: 'var(--text-2)' }[x.nivel]}">${esc(x.veredicto)}</div></div>`;
+}
+function resumen(r) {
+  if (!r) return;
+  const cols = [];
+  if (r.conCpu) cols.push(colResumen('Procesador', '#3b8cff', 'i-cpu', `${r.nombreCpu} · ${r.modo} · ${r.hilos} hilos`, r.cpu, [
+    ['Temperatura estable', r.cpu.temp ? nf(r.cpu.temp, 1) + ' °C' : 'n/d'], ['Temperatura máxima', r.cpu.tempMax ? nf(r.cpu.tempMax, 1) + ' °C' : 'n/d'],
+    ['Frecuencia promedio', r.cpu.frec ? nf(r.cpu.frec) + ' MHz' : 'n/d'], ['Potencia promedio', r.cpu.pot ? nf(r.cpu.pot, 1) + ' W' : 'n/d'],
+    ['Rendimiento', r.cpu.rend ? nf(r.cpu.rend, 1) + ' ' + r.unidad : 'n/d']]));
+  if (r.conGpu) cols.push(colResumen('Tarjeta gráfica', '#34d399', 'i-gpu', r.nombreGpu, r.gpu, [
+    ['Temperatura estable', r.gpu.temp ? nf(r.gpu.temp, 1) + ' °C' : 'n/d'], ['Temperatura máxima', r.gpu.tempMax ? nf(r.gpu.tempMax, 1) + ' °C' : 'n/d'],
+    ['Hot spot estable', r.gpu.hot ? nf(r.gpu.hot, 1) + ' °C' : 'n/d'], ['Potencia promedio', r.gpu.pot ? nf(r.gpu.pot, 1) + ' W' : 'n/d'],
+    ['Rendimiento', r.gpu.rend ? nf(r.gpu.rend) + ' GFLOPS' : 'n/d']]));
+  $('#mbox').innerHTML = `
+    <div class="mh"><div class="mi">${ic('i-chart')}</div><div><h2>Resumen de la prueba</h2><p>${esc(r.inicio)} · duración ${esc(r.duracion)} · ${esc(r.motivo)}</p></div>
+      <button class="icon-btn x" onclick="cerrarModal()">${ic('i-x')}</button></div>
+    <div class="mbody"><div class="mcols" style="${cols.length === 1 ? 'grid-template-columns:1fr' : ''}">${cols.join('')}</div>
+      <div class="mchart"><canvas id="mch"></canvas></div>
+      <div class="leg" style="margin-top:10px;justify-content:center">${r.conCpu ? '<span><i style="background:#3b8cff"></i>Temp CPU</span>' : ''}${r.conGpu ? '<span><i style="background:#34d399"></i>Temp GPU</span>' : ''}<span style="color:var(--text-3)">Los valores "estables" son el promedio del último minuto.</span></div></div>
+    <div class="mf"><button class="btn" onclick="enviar({accion:'exportar',id:'${esc(r.id)}'})">${ic('i-down')}Exportar CSV</button><button class="btn pri" onclick="cerrarModal()">Listo</button></div>`;
+  $('#modal').classList.add('on');
+  requestAnimationFrame(() => {
+    const s = [];
+    if (r.conCpu) s.push({ d: r.serie.cpuTemp, c: '#3b8cff', max: 105, relleno: true });
+    if (r.conGpu) s.push({ d: r.serie.gpuTemp, c: '#34d399', max: 105, relleno: true });
+    grafico($('#mch'), s, Math.max(2, r.serie.cpuTemp.length, r.serie.gpuTemp.length), { ejes: false });
+  });
+}
+function confirmar(titulo, texto, boton, ok) {
+  $('#mbox').innerHTML = `<div class="mh"><div class="mi" style="background:linear-gradient(135deg,#f43f5e,#e11d48)">${ic('i-trash')}</div><div><h2>${esc(titulo)}</h2><p>${esc(texto)}</p></div></div>
+    <div class="mf"><button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn pri" id="mOk" style="background:linear-gradient(135deg,#f43f5e,#e11d48)">${esc(boton)}</button></div>`;
+  $('#mbox').style.width = 'min(520px,100%)';
+  $('#mOk').onclick = () => { cerrarModal(); ok(); };
+  $('#modal').classList.add('on');
+  setTimeout(() => $('#mbox').style.width = '', 400);
+}
+
+/* ---------- mensajes desde la app ---------- */
+window.chrome?.webview?.addEventListener('message', ev => {
+  const m = ev.data;
+  switch (m.tipo) {
+    case 'init':
+      S.info = m; S.historial = m.historial || [];
+      if (m.config) Object.assign(S.cfg, m.config);
+      if (m.config?.encima) { S.encima = true; $('#btnPin').classList.add('on'); enviar({ accion: 'encima', valor: true }); }
+      $('#ver').textContent = 'v' + m.version;
+      initConfig(); pintarHistorial();
+      break;
+    case 'estado': estado(m); break;
+    case 'aviso': aviso(m.texto, m.nivel); break;
+    case 'detenido':
+      aviso('Prueba ' + m.motivo, m.alarma ? 'bad' : 'ok');
+      if (m.resumen) { S.historial.unshift(m.resumen); if (S.historial.length > 30) S.historial.pop(); pintarHistorial(); }
+      if (m.mostrar && m.resumen) resumen(m.resumen);
+      break;
+    case 'historial': S.historial = m.lista; pintarHistorial(); aviso('Historial borrado', 'ok'); break;
+  }
+});
+
+crearGauge('gCpuTemp', 'CPU · Temperatura', '#fb7a3c', 'i-temp');
+crearGauge('gCpuUso', 'CPU · Uso', '#3b8cff', 'i-cpu');
+crearGauge('gGpuTemp', 'GPU · Temperatura', '#fb7a3c', 'i-temp');
+crearGauge('gGpuUso', 'GPU · Uso', '#34d399', 'i-gpu');
+crearTile('tCpuFrec', 'CPU · Frecuencia', 'i-gauge', '#3b8cff');
+crearTile('tCpuPot', 'CPU · Potencia', 'i-zap', '#fbbf24');
+crearTile('tCpuRend', 'CPU · Rendimiento', 'i-activity', '#a78bfa');
+crearTile('tGpuFrec', 'GPU · Frecuencia', 'i-gauge', '#34d399');
+crearTile('tGpuPot', 'GPU · Potencia', 'i-zap', '#fbbf24');
+crearTile('tGpuRend', 'GPU · Rendimiento', 'i-activity', '#a78bfa');
+new ResizeObserver(() => { if (S.pag === 'panel') dibujarGraficos(); }).observe($('.paginas'));
+enviar({ accion: 'listo' });
+</script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>CoreBlaze</AssemblyName>
+    <RootNamespace>ProbarCpu</RootNamespace>
+    <Optimize>true</Optimize>
+    <ApplicationIcon>recursos\logo.ico</ApplicationIcon>
+    <Product>CoreBlaze</Product>
+    <AssemblyTitle>CoreBlaze</AssemblyTitle>
+    <Version>3.0.0</Version>
+    <AllowedReferenceRelatedFileExtensions>.pdb</AllowedReferenceRelatedFileExtensions>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="recursos\logo.ico" LogicalName="ProbarCpu.logo.ico" />
+    <EmbeddedResource Include="recursos\interfaz.html" LogicalName="ProbarCpu.interfaz.html" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
+    <PackageReference Include="Vortice.Direct3D11" Version="3.8.3" />
+    <PackageReference Include="Vortice.D3DCompiler" Version="3.8.3" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
+  </ItemGroup>
+
+</Project>
