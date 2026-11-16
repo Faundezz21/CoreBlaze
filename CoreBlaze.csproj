@@ -12,6 +12,10 @@
     <Optimize>true</Optimize>
     <ApplicationIcon>recursos\logo.ico</ApplicationIcon>
     <Product>CoreBlaze</Product>
+    <Authors>Faundezz21</Authors>
+    <Company>Faundezz21</Company>
+    <Copyright>© 2026 Faundezz21</Copyright>
+    <Description>Stress test y monitor térmico de CPU y GPU</Description>
     <AssemblyTitle>CoreBlaze</AssemblyTitle>
     <Version>3.0.0</Version>
     <AllowedReferenceRelatedFileExtensions>.pdb</AllowedReferenceRelatedFileExtensions>

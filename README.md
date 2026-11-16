@@ -9,6 +9,10 @@
   Pone tu equipo al 100 %, mide temperaturas, consumo y rendimiento en vivo, y te dice si la refrigeración está bien.
 </p>
 
+<p align="center">
+  Desarrollado por <a href="https://github.com/Faundezz21"><b>Faundezz21</b></a>
+</p>
+
 ---
 
 ## Características
@@ -97,6 +101,10 @@ La configuración y el historial se guardan en `%LOCALAPPDATA%\CoreBlaze`. Si la
 - C# / .NET 8 con Windows Forms y [WebView2](https://learn.microsoft.com/microsoft-edge/webview2/)
 - [LibreHardwareMonitorLib](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) para los sensores
 - [Vortice.Windows](https://github.com/amerkoleci/Vortice.Windows) para DirectX 11
+
+## Autor
+
+**CoreBlaze** fue diseñado y desarrollado por **[Faundezz21](https://github.com/Faundezz21)**.
 
 ## Aviso
 
