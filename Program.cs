@@ -26,6 +26,7 @@ internal static class Program
             // prioridad alta para que la interfaz siga respondiendo durante el estres
             try { System.Diagnostics.Process.GetCurrentProcess().PriorityClass = System.Diagnostics.ProcessPriorityClass.AboveNormal; } catch { }
             DesactivarEcoQos();
+            UsarTodosLosNucleos();
             Application.Run(new FormPrincipal());
             Log("cierre normal");
         }
@@ -34,6 +35,29 @@ internal static class Program
             Fallo(ex);
         }
     }
+
+    // cantidad real de nucleos logicos del equipo, sin importar la afinidad heredada
+    public static int Hilos { get; private set; } = Environment.ProcessorCount;
+
+    // si el proceso hereda una afinidad limitada se restablece a todos los nucleos
+    private static void UsarTodosLosNucleos()
+    {
+        try
+        {
+            int total = (int)GetActiveProcessorCount(0xFFFF);
+            if (total <= 0) return;
+            Hilos = total;
+            if (total <= 64)
+            {
+                long mascara = total == 64 ? -1L : (1L << total) - 1;
+                System.Diagnostics.Process.GetCurrentProcess().ProcessorAffinity = (IntPtr)mascara;
+            }
+        }
+        catch { }
+    }
+
+    [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+    private static extern uint GetActiveProcessorCount(ushort grupo);
 
     // evita que windows 11 mande los hilos a nucleos lentos cuando la ventana no esta al frente
     private static void DesactivarEcoQos()
